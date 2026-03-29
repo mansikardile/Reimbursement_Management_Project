@@ -14,9 +14,12 @@ export default function ApprovalRulesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
-    name: '', ruleType: 'SEQUENTIAL' as string, percentThreshold: '', minAmount: '', maxAmount: '',
-    isManagerFirst: true, specificApproverId: '',
-    steps: [{ approverId: '', roleLabel: '', stepOrder: 1 }],
+    name: '', ruleType: 'SEQUENTIAL' as string,
+    percentThreshold: '', minAmount: '', maxAmount: '',
+    isManagerFirst: true,
+    isSequential: true,   // NEW: sequential vs parallel
+    specificApproverId: '',
+    steps: [{ approverId: '', roleLabel: '', stepOrder: 1, isRequired: false }],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -38,10 +41,16 @@ export default function ApprovalRulesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const resetForm = () => setForm({
+    name: '', ruleType: 'SEQUENTIAL', percentThreshold: '', minAmount: '', maxAmount: '',
+    isManagerFirst: true, isSequential: true, specificApproverId: '',
+    steps: [{ approverId: '', roleLabel: '', stepOrder: 1, isRequired: false }],
+  });
+
   const addStep = () => {
     setForm(f => ({
       ...f,
-      steps: [...f.steps, { approverId: '', roleLabel: '', stepOrder: f.steps.length + 1 }],
+      steps: [...f.steps, { approverId: '', roleLabel: '', stepOrder: f.steps.length + 1, isRequired: false }],
     }));
   };
 
@@ -66,11 +75,20 @@ export default function ApprovalRulesPage() {
     setSubmitting(true);
     try {
       const body = {
-        ...form,
+        name: form.name,
+        ruleType: form.ruleType,
+        isManagerFirst: form.isManagerFirst,
+        isSequential: form.isSequential,
         percentThreshold: form.percentThreshold ? parseFloat(form.percentThreshold) : undefined,
         minAmount: form.minAmount ? parseFloat(form.minAmount) : undefined,
         maxAmount: form.maxAmount ? parseFloat(form.maxAmount) : undefined,
         specificApproverId: form.specificApproverId || undefined,
+        steps: form.steps.map(s => ({
+          approverId: s.approverId,
+          roleLabel: s.roleLabel,
+          stepOrder: s.stepOrder,
+          isRequired: s.isRequired,
+        })),
       };
       const res = await fetch('/api/approval-rules', {
         method: 'POST',
@@ -81,7 +99,7 @@ export default function ApprovalRulesPage() {
       if (res.ok) {
         showToast('Approval rule created!', 'success');
         setShowModal(false);
-        setForm({ name: '', ruleType: 'SEQUENTIAL', percentThreshold: '', minAmount: '', maxAmount: '', isManagerFirst: true, specificApproverId: '', steps: [{ approverId: '', roleLabel: '', stepOrder: 1 }] });
+        resetForm();
         fetchData();
       } else {
         setErrors(data.details || { general: data.error });
@@ -101,7 +119,8 @@ export default function ApprovalRulesPage() {
   };
 
   const ruleTypeLabels: Record<string, string> = {
-    SEQUENTIAL: '📋 Sequential', PERCENTAGE: '📊 Percentage', SPECIFIC_APPROVER: '👤 Specific Approver', HYBRID: '🔀 Hybrid',
+    SEQUENTIAL: '📋 Sequential', PERCENTAGE: '📊 Percentage',
+    SPECIFIC_APPROVER: '👤 Specific Approver', HYBRID: '🔀 Hybrid',
   };
 
   return (
@@ -130,6 +149,7 @@ export default function ApprovalRulesPage() {
                   <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{rule.name}</h3>
                   <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
                     {ruleTypeLabels[rule.ruleType] || rule.ruleType}
+                    {rule.isSequential ? ' • Sequential' : ' • Parallel (all at once)'}
                     {rule.percentThreshold && ` • ${rule.percentThreshold}% threshold`}
                     {rule.minAmount != null && ` • Min: ${rule.minAmount}`}
                     {rule.maxAmount != null && ` • Max: ${rule.maxAmount}`}
@@ -140,10 +160,11 @@ export default function ApprovalRulesPage() {
               </div>
               <div className="card-body">
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  {rule.steps.map((step: { stepOrder: number; roleLabel: string; approver: { firstName: string; lastName: string } }, i: number) => (
+                  {rule.steps.map((step: { stepOrder: number; roleLabel: string; isRequired: boolean; approver: { firstName: string; lastName: string } }, i: number) => (
                     <div key={i} style={{
                       display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
-                      background: '#f5f0f4', borderRadius: 8, fontSize: '0.8125rem',
+                      background: step.isRequired ? '#fef3c7' : '#f5f0f4', borderRadius: 8, fontSize: '0.8125rem',
+                      border: step.isRequired ? '1px solid #f59e0b' : 'none',
                     }}>
                       <span style={{
                         width: 24, height: 24, borderRadius: '50%', background: '#714b67', color: '#fff',
@@ -151,6 +172,7 @@ export default function ApprovalRulesPage() {
                       }}>{step.stepOrder}</span>
                       <span style={{ fontWeight: 500 }}>{step.roleLabel}</span>
                       <span style={{ color: '#9ca3af' }}>→ {step.approver.firstName} {step.approver.lastName}</span>
+                      {step.isRequired && <span style={{ fontSize: '0.6875rem', color: '#d97706', fontWeight: 600 }}>REQUIRED</span>}
                     </div>
                   ))}
                 </div>
@@ -167,11 +189,11 @@ export default function ApprovalRulesPage() {
 
       {/* Create Rule Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={() => { setShowModal(false); resetForm(); }}>
           <div className="modal" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Create Approval Rule</h2>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => { setShowModal(false); resetForm(); }}>✕</button>
             </div>
             <div className="modal-body">
               {errors.general && <div style={{ padding: '12px 16px', background: '#fdeaea', color: '#c0392b', borderRadius: 8, marginBottom: 16, fontSize: '0.875rem' }}>{errors.general}</div>}
@@ -216,7 +238,7 @@ export default function ApprovalRulesPage() {
 
                 {(form.ruleType === 'SPECIFIC_APPROVER' || form.ruleType === 'HYBRID') && (
                   <div className="form-group">
-                    <label className="form-label">Specific Approver (auto-approves)</label>
+                    <label className="form-label">Specific Approver (auto-approves when they approve)</label>
                     <select className="form-select" value={form.specificApproverId} onChange={e => setForm({ ...form, specificApproverId: e.target.value })}>
                       <option value="">Select user</option>
                       {users.filter(u => u.role !== 'EMPLOYEE').map(u => (
@@ -226,36 +248,59 @@ export default function ApprovalRulesPage() {
                   </div>
                 )}
 
-                <div className="form-group">
+                {/* Manager First + Approvers Sequence checkboxes */}
+                <div style={{ display: 'flex', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                     <input type="checkbox" checked={form.isManagerFirst}
                       onChange={e => setForm({ ...form, isManagerFirst: e.target.checked })} />
-                    <span className="form-label" style={{ marginBottom: 0 }}>Manager approves first (IS_MANAGER_APPROVER)</span>
+                    <span className="form-label" style={{ marginBottom: 0 }}>Is Manager Approver?</span>
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>(manager goes first)</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.isSequential}
+                      onChange={e => setForm({ ...form, isSequential: e.target.checked })} />
+                    <span className="form-label" style={{ marginBottom: 0 }}>Approvers Sequence?</span>
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>(one at a time in order)</span>
                   </label>
                 </div>
+                {!form.isSequential && (
+                  <p style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: 16, padding: '8px 12px', background: '#f3f4f6', borderRadius: 6 }}>
+                    ℹ️ Parallel mode: all approvers receive the request simultaneously. Expense approved when all vote (or threshold met).
+                  </p>
+                )}
 
+                {/* Approval Steps */}
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <label className="form-label" style={{ marginBottom: 0 }}>Approval Steps *</label>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addStep}>+ Add Step</button>
                   </div>
                   {form.steps.map((step, idx) => (
-                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                      <span style={{
-                        width: 28, height: 28, borderRadius: '50%', background: '#714b67', color: '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700,
-                      }}>{step.stepOrder}</span>
-                      <select className="form-select" value={step.approverId} onChange={e => updateStep(idx, 'approverId', e.target.value)} style={{ fontSize: '0.8125rem' }}>
-                        <option value="">Select approver</option>
-                        {users.filter(u => u.role !== 'EMPLOYEE').map(u => (
-                          <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
-                        ))}
-                      </select>
-                      <input className="form-input" placeholder="Role label (e.g., Manager)" value={step.roleLabel}
-                        onChange={e => updateStep(idx, 'roleLabel', e.target.value)} style={{ fontSize: '0.8125rem' }} />
-                      {form.steps.length > 1 && (
-                        <button type="button" className="btn btn-ghost btn-icon" style={{ color: '#e74c3c' }} onClick={() => removeStep(idx)}>✕</button>
-                      )}
+                    <div key={idx} style={{ marginBottom: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr auto', gap: 8, alignItems: 'center' }}>
+                        <span style={{
+                          width: 28, height: 28, borderRadius: '50%', background: '#714b67', color: '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700,
+                        }}>{step.stepOrder}</span>
+                        <select className="form-select" value={step.approverId} onChange={e => updateStep(idx, 'approverId', e.target.value)} style={{ fontSize: '0.8125rem' }}>
+                          <option value="">Select approver</option>
+                          {users.filter(u => u.role !== 'EMPLOYEE').map(u => (
+                            <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+                          ))}
+                        </select>
+                        <input className="form-input" placeholder="Role label (e.g., Manager)" value={step.roleLabel}
+                          onChange={e => updateStep(idx, 'roleLabel', e.target.value)} style={{ fontSize: '0.8125rem' }} />
+                        {form.steps.length > 1 && (
+                          <button type="button" className="btn btn-ghost btn-icon" style={{ color: '#e74c3c' }} onClick={() => removeStep(idx)}>✕</button>
+                        )}
+                      </div>
+                      {/* Required checkbox per step */}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 36, cursor: 'pointer', fontSize: '0.8125rem', color: '#6b7280' }}>
+                        <input type="checkbox" checked={step.isRequired}
+                          onChange={e => updateStep(idx, 'isRequired', e.target.checked)} />
+                        <span>Required</span>
+                        <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>(must approve in any combination scenario)</span>
+                      </label>
                     </div>
                   ))}
                 </div>
