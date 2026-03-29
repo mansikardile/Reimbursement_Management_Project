@@ -1,0 +1,7 @@
+﻿Loaded Prisma config from prisma.config.ts.
+System.Management.Automation.RemoteException
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "reimburse_db", schema "public" at "localhost:5432"
+
+Your database is now in sync with your Prisma schema. Done in 154ms
+

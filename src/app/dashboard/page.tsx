@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { FileText, Clock, CheckCircle2, XCircle, Wallet } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, company, token } = useAuth();
@@ -41,7 +42,7 @@ export default function DashboardPage() {
     <div>
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1f2937', marginBottom: 4 }}>
-          Welcome, {user?.firstName}! 👋
+          Welcome, {user?.firstName}!
         </h1>
         <p style={{ color: '#6b7280', fontSize: '0.9375rem' }}>
           {roleLabelMap[user?.role || 'EMPLOYEE']} at {company?.name} • {company?.currency}
@@ -50,22 +51,22 @@ export default function DashboardPage() {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#f5f0f4', color: '#714b67' }}>📋</div>
+          <div className="stat-icon" style={{ background: '#f5f0f4', color: '#714b67' }}><FileText size={22} /></div>
           <div className="stat-value">{stats.total}</div>
           <div className="stat-label">Total Expenses</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#fef5e7', color: '#f39c12' }}>⏳</div>
+          <div className="stat-icon" style={{ background: '#fef5e7', color: '#f39c12' }}><Clock size={22} /></div>
           <div className="stat-value">{stats.pending}</div>
           <div className="stat-label">Pending Approval</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#e8f8f0', color: '#2ecc71' }}>✅</div>
+          <div className="stat-icon" style={{ background: '#e8f8f0', color: '#2ecc71' }}><CheckCircle2 size={22} /></div>
           <div className="stat-value">{stats.approved}</div>
           <div className="stat-label">Approved</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#fdeaea', color: '#e74c3c' }}>❌</div>
+          <div className="stat-icon" style={{ background: '#fdeaea', color: '#e74c3c' }}><XCircle size={22} /></div>
           <div className="stat-value">{stats.rejected}</div>
           <div className="stat-label">Rejected</div>
         </div>
@@ -79,7 +80,7 @@ export default function DashboardPage() {
         <div className="card-body" style={{ padding: 0 }}>
           {recentExpenses.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">💰</div>
+              <div className="empty-icon"><Wallet size={40} strokeWidth={1.2} /></div>
               <h3>No expenses yet</h3>
               <p>Submit your first expense to get started</p>
             </div>

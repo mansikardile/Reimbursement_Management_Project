@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { useAuth } from '@/context/AuthContext';
+import { Bot, X, Send } from 'lucide-react';
 
 export default function Chatbot() {
   const { user } = useAuth();
@@ -56,12 +57,12 @@ export default function Chatbot() {
           borderRadius: '50%', background: 'linear-gradient(135deg, #714b67, #5a3a52)',
           color: '#fff', border: 'none', cursor: 'pointer',
           boxShadow: '0 4px 12px rgba(113,75,103,0.4)',
-          fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'all 0.3s ease', zIndex: 999,
           transform: isOpen ? 'rotate(45deg)' : 'none',
         }}
       >
-        {isOpen ? '✕' : '🤖'}
+        {isOpen ? <X size={22} /> : <Bot size={22} />}
       </button>
 
       {/* Chat Window */}
@@ -76,11 +77,11 @@ export default function Chatbot() {
             padding: '16px 20px', background: 'linear-gradient(135deg, #714b67, #5a3a52)',
             color: '#fff', display: 'flex', alignItems: 'center', gap: 12,
           }}>
-            <span style={{ fontSize: '1.25rem' }}>🤖</span>
+            <Bot size={20} />
             <div>
               <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>ReimburseFlow AI</div>
               <div style={{ fontSize: '0.6875rem', opacity: 0.8 }}>
-                {isLoading ? '⏳ Thinking...' : 'Powered by Gemini'}
+                {isLoading ? 'Thinking...' : 'Powered by Gemini'}
               </div>
             </div>
           </div>
@@ -159,11 +160,11 @@ export default function Chatbot() {
                 padding: '10px 16px', background: '#714b67', color: '#fff',
                 border: 'none', borderRadius: 8,
                 cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
-                fontWeight: 600, fontSize: '0.875rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 opacity: isLoading || !input.trim() ? 0.5 : 1,
               }}
             >
-              Send
+              <Send size={16} />
             </button>
           </form>
         </div>

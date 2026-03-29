@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { List, BarChart2, User, Shuffle, Settings2, Trash2, Key, Info } from 'lucide-react';
 
 export default function ApprovalRulesPage() {
   const { token } = useAuth();
@@ -118,15 +119,21 @@ export default function ApprovalRulesPage() {
     } catch { /* ignore */ }
   };
 
+  const ruleTypeIcon: Record<string, React.ReactNode> = {
+    SEQUENTIAL: <List size={14} />, PERCENTAGE: <BarChart2 size={14} />,
+    SPECIFIC_APPROVER: <User size={14} />, HYBRID: <Shuffle size={14} />,
+  };
   const ruleTypeLabels: Record<string, string> = {
-    SEQUENTIAL: '📋 Sequential', PERCENTAGE: '📊 Percentage',
-    SPECIFIC_APPROVER: '👤 Specific Approver', HYBRID: '🔀 Hybrid',
+    SEQUENTIAL: 'Sequential', PERCENTAGE: 'Percentage',
+    SPECIFIC_APPROVER: 'Specific Approver', HYBRID: 'Hybrid',
   };
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937' }}>Approval Rules</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Settings2 size={22} color="#714b67" /> Approval Rules
+        </h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Create Rule</button>
       </div>
 
@@ -135,7 +142,7 @@ export default function ApprovalRulesPage() {
       ) : rules.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div className="empty-icon">⚙️</div>
+            <div className="empty-icon"><Settings2 size={40} strokeWidth={1.2} /></div>
             <h3>No approval rules defined</h3>
             <p>Create an approval rule to define how expenses are approved</p>
           </div>
@@ -147,8 +154,8 @@ export default function ApprovalRulesPage() {
               <div className="card-header">
                 <div>
                   <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{rule.name}</h3>
-                  <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
-                    {ruleTypeLabels[rule.ruleType] || rule.ruleType}
+                  <span style={{ fontSize: '0.8125rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{ruleTypeIcon[rule.ruleType]}{ruleTypeLabels[rule.ruleType] || rule.ruleType}</span>
                     {rule.isSequential ? ' • Sequential' : ' • Parallel (all at once)'}
                     {rule.percentThreshold && ` • ${rule.percentThreshold}% threshold`}
                     {rule.minAmount != null && ` • Min: ${rule.minAmount}`}
@@ -156,7 +163,9 @@ export default function ApprovalRulesPage() {
                     {rule.isManagerFirst && ' • Manager First'}
                   </span>
                 </div>
-                <button className="btn btn-ghost btn-sm" style={{ color: '#e74c3c' }} onClick={() => handleDelete(rule.id)}>🗑 Delete</button>
+                <button className="btn btn-ghost btn-sm" style={{ color: '#e74c3c', display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => handleDelete(rule.id)}>
+                  <Trash2 size={15} /> Delete
+                </button>
               </div>
               <div className="card-body">
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -177,8 +186,8 @@ export default function ApprovalRulesPage() {
                   ))}
                 </div>
                 {rule.specificApprover && (
-                  <p style={{ marginTop: 12, fontSize: '0.8125rem', color: '#6b7280' }}>
-                    🔑 Specific approver override: <strong>{rule.specificApprover.firstName} {rule.specificApprover.lastName}</strong>
+                  <p style={{ marginTop: 12, fontSize: '0.8125rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Key size={14} /> Specific approver override: <strong>{rule.specificApprover.firstName} {rule.specificApprover.lastName}</strong>
                   </p>
                 )}
               </div>
@@ -264,8 +273,8 @@ export default function ApprovalRulesPage() {
                   </label>
                 </div>
                 {!form.isSequential && (
-                  <p style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: 16, padding: '8px 12px', background: '#f3f4f6', borderRadius: 6 }}>
-                    ℹ️ Parallel mode: all approvers receive the request simultaneously. Expense approved when all vote (or threshold met).
+                  <p style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: 16, padding: '8px 12px', background: '#f3f4f6', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Info size={14} /> Parallel mode: all approvers receive the request simultaneously.
                   </p>
                 )}
 
