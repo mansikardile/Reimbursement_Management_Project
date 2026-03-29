@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, password, firstName, lastName, role, managerId } = validation.data;
+    // Note: createUserSchema already restricts role to EMPLOYEE | MANAGER (Zod-enforced)
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -133,6 +134,15 @@ export async function PATCH(req: NextRequest) {
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    // The admin's role cannot be changed (check against DB role, not input)
+    if (targetUser.role === 'ADMIN') {
+      return NextResponse.json(
+        { error: 'The admin role cannot be modified.' },
+        { status: 403 }
+      );
+    }
+    // Note: updateUserSchema already restricts role to EMPLOYEE | MANAGER (Zod-enforced)
 
     const user = await prisma.user.update({
       where: { id: userId },

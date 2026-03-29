@@ -25,7 +25,7 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
-  role: z.enum(['EMPLOYEE', 'MANAGER', 'ADMIN']).optional(),
+  role: z.enum(['EMPLOYEE', 'MANAGER'], { message: 'Role must be EMPLOYEE or MANAGER' }).optional(),
   managerId: z.string().nullable().optional(),
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
