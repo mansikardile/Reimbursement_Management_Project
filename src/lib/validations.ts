@@ -47,11 +47,13 @@ export const approvalRuleSchema = z.object({
   minAmount: z.number().min(0).optional(),
   maxAmount: z.number().min(0).optional(),
   isManagerFirst: z.boolean().default(true),
+  isSequential: z.boolean().default(true),
   specificApproverId: z.string().optional(),
   steps: z.array(z.object({
     approverId: z.string().min(1, 'Approver is required'),
     roleLabel: z.string().min(1, 'Role label is required'),
     stepOrder: z.number().int().min(1),
+    isRequired: z.boolean().default(false),
   })).min(1, 'At least one approval step is required'),
 });
 

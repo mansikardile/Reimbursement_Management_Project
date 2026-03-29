@@ -115,7 +115,8 @@ model ApprovalRule {
   percentThreshold Float?   // e.g., 60 for 60%
   minAmount        Float?
   maxAmount        Float?
-  isManagerFirst   Boolean  @default(true) // IS_MANAGER_APPROVER field
+  isManagerFirst   Boolean  @default(true) // send to manager first before other steps
+  isSequential     Boolean  @default(true) // true = one at a time in order; false = all at once
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -133,9 +134,10 @@ model ApprovalRule {
 }
 
 model ApprovalRuleStep {
-  id        String @id @default(cuid())
-  stepOrder Int
-  roleLabel String // e.g., "Manager", "Finance", "Director"
+  id         String  @id @default(cuid())
+  stepOrder  Int
+  roleLabel  String  // e.g., "Manager", "Finance", "Director"
+  isRequired Boolean @default(false) // if true, this approver MUST approve regardless of % rule
 
   ruleId String
   rule   ApprovalRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)

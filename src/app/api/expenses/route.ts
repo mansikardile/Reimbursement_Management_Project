@@ -128,33 +128,37 @@ export async function POST(req: NextRequest) {
     let stepOrder = 1;
 
     if (approvalRule) {
-      // If isManagerFirst and user has a manager, add manager as first step
+      const isSequential = approvalRule.isSequential;
+
+      // If isManagerFirst and user has a manager, prepend manager as step 1
       if (approvalRule.isManagerFirst && submitter?.managerId) {
         approvalSteps.push({
           stepOrder: stepOrder++,
           approverId: submitter.managerId,
+          // Sequential: only step 1 is active; Parallel: all active
           status: 'PENDING',
         });
       }
 
-      // Add rule steps
+      // Add configured rule steps
       for (const step of approvalRule.steps) {
-        // Skip if this approver was already added as manager
         if (approvalSteps.some(s => s.approverId === step.approverId)) continue;
         approvalSteps.push({
           stepOrder: stepOrder++,
           approverId: step.approverId,
+          // In sequential mode steps >1 start as PENDING but approver can only act when it's their turn
           status: 'PENDING',
         });
       }
+
+      // For sequential mode, store isSequential on the rule so the engine can read it
+      // (already stored on approvalRule.isSequential)
+      void isSequential; // used by approve engine, not here
     } else if (submitter?.managerId) {
-      // No rule defined, default to manager approval
-      approvalSteps.push({
-        stepOrder: 1,
-        approverId: submitter.managerId,
-        status: 'PENDING',
-      });
+      // No rule: default to manager approval
+      approvalSteps.push({ stepOrder: 1, approverId: submitter.managerId, status: 'PENDING' });
     }
+
 
     const expense = await prisma.expense.create({
       data: {

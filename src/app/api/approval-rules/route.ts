@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, ruleType, percentThreshold, minAmount, maxAmount, isManagerFirst, specificApproverId, steps } = validation.data;
+    const { name, ruleType, percentThreshold, minAmount, maxAmount, isManagerFirst, isSequential, specificApproverId, steps } = validation.data;
 
     const rule = await prisma.approvalRule.create({
       data: {
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         minAmount: minAmount || null,
         maxAmount: maxAmount || null,
         isManagerFirst,
+        isSequential,
         companyId: authUser.companyId,
         specificApproverId: specificApproverId || null,
         steps: {
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
             stepOrder: s.stepOrder,
             roleLabel: s.roleLabel,
             approverId: s.approverId,
+            isRequired: s.isRequired,
           })),
         },
       },
