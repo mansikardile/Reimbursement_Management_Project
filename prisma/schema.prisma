@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_REVIEW
+}
+
+enum ApprovalStepStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RuleType {
+  SEQUENTIAL
+  PERCENTAGE
+  SPECIFIC_APPROVER
+  HYBRID
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  country   String
+  currency  String   @default("USD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  approvalRules ApprovalRule[]
+  expenses      Expense[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  managerId String?
+  manager   User?   @relation("ManagerRelation", fields: [managerId], references: [id])
+  employees User[]  @relation("ManagerRelation")
+
+  submittedExpenses Expense[]      @relation("SubmittedExpenses")
+  approvalSteps     ApprovalStep[] @relation("ApproverSteps")
+
+  // For specific approver rules
+  specificApproverRules ApprovalRule[] @relation("SpecificApprover")
+
+  // For approval rule steps
+  ruleSteps ApprovalRuleStep[]
+
+  @@index([companyId])
+  @@index([managerId])
+}
+
+model Expense {
+  id               String        @id @default(cuid())
+  amount           Float
+  originalCurrency String
+  convertedAmount  Float
+  companyCurrency  String
+  exchangeRate     Float         @default(1)
+  category         String
+  description      String
+  expenseDate      DateTime
+  receiptUrl       String?
+  status           ExpenseStatus @default(PENDING)
+  currentStep      Int           @default(0)
+  totalSteps       Int           @default(1)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  submitterId String
+  submitter   User   @relation("SubmittedExpenses", fields: [submitterId], references: [id])
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  approvalRuleId String?
+  approvalRule   ApprovalRule? @relation(fields: [approvalRuleId], references: [id])
+
+  approvalSteps ApprovalStep[]
+
+  @@index([submitterId])
+  @@index([companyId])
+  @@index([status])
+}
+
+model ApprovalRule {
+  id               String   @id @default(cuid())
+  name             String
+  ruleType         RuleType
+  percentThreshold Float?   // e.g., 60 for 60%
+  minAmount        Float?
+  maxAmount        Float?
+  isManagerFirst   Boolean  @default(true) // IS_MANAGER_APPROVER field
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  specificApproverId String?
+  specificApprover   User?   @relation("SpecificApprover", fields: [specificApproverId], references: [id])
+
+  steps    ApprovalRuleStep[]
+  expenses Expense[]
+
+  @@index([companyId])
+}
+
+model ApprovalRuleStep {
+  id        String @id @default(cuid())
+  stepOrder Int
+  roleLabel String // e.g., "Manager", "Finance", "Director"
+
+  ruleId String
+  rule   ApprovalRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  approverId String
+  approver   User   @relation(fields: [approverId], references: [id])
+
+  @@index([ruleId])
+  @@unique([ruleId, stepOrder])
+}
+
+model ApprovalStep {
+  id        String             @id @default(cuid())
+  stepOrder Int
+  status    ApprovalStepStatus @default(PENDING)
+  comments  String?
+  decidedAt DateTime?
+  createdAt DateTime           @default(now())
+
+  expenseId String
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  approverId String
+  approver   User   @relation("ApproverSteps", fields: [approverId], references: [id])
+
+  @@index([expenseId])
+  @@index([approverId])
+  @@unique([expenseId, stepOrder])
+}
